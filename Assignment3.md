@@ -5,71 +5,10 @@ date: "4/8/2022"
 output: pdf_document
 ---
 
-```{r, echo=FALSE}
-knitr::opts_chunk$set(error = FALSE)
-```
 
 
-```{r load-packages, include = FALSE}
-library(tidyverse)
-library(ggplot2)
-library(mosaic)
-library(knitr)
-library(foreach)
-library(FNN)
-library(rsample)
-library(modelr)
-library(class)
-library(quantmod)
-library(readr)
-library(rmarkdown)
-library(ggplot2)
-library(rpart)
-library(rpart.plot)
-library(rsample)
-library(randomForest)
-library(lubridate)
-library(modelr)
-library("devtools")
-library(gbm)
-library(kableExtra)
-library(dplyr)
-library(magrittr)
-library(rsample)
-library(caret)
-library(tidyverse)
-library(ggplot2)
-library(glmnet)
-library(gbm)
-library(ggmap)
-library(rpart)
-library(rpart.plot)
-library(randomForest)
-library(rsample)
-library(MASS)
-library(modelr)
-library(fastDummies)
-library(scales)
-library(here)
-library(readr)
-library(dplyr)
-library(rmarkdown)
-library(tidyverse)
-library(ggplot2)
-library(rpart)
-library(rpart.plot)
-library(rsample)
-library(randomForest)
-library(lubridate)
-library(modelr)
-library("devtools")
-library(gbm)
-library(kableExtra)
-library(dplyr)
-library(plyr)
-library(magrittr)
-library(rsample)
-```
+
+
 
 
 ## 1. What Causes What?
@@ -90,29 +29,42 @@ For this question, I decided to use number of dengue cases (rather than the log)
 
 Then I compared RMSE's for 5 regression models: Two tree models (one with all covariates and one with some amount of feature engineering), two random forest models similarly defined, and the optimal boosted tree model. The RMSE for the random forest model with all covariates performed best across multiple train-test splits with the lowest RMSE.
 
-```{r dengue_trees imp plots, eval =TRUE}
 
+```r
 varImpPlot(dengue_forest_all , main="Variable Importance Plot")
-           
 ```
+
+![plot of chunk dengue_trees imp plots](figure/dengue_trees imp plots-1.png)
 
 Along with `specific_humidity` and `precipitation_amt`, I chose to include a partial dependence plot for the `season` variable as the "wildcard" feature. This choice was informed by the variable importance plot above derived from the aforementioned best-performing random forest model. Here we see that `season` appears to have one of the strongest effects on dengue cases. We now examine the partial dependence plots for the variables.
 
-```{r dengue_trees pdplots}
+
+```r
 partialPlot(dengue_forest_all, 
                           dengue_test, 
                           'specific_humidity', 
                           las=1)
+```
+
+![plot of chunk dengue_trees pdplots](figure/dengue_trees pdplots-1.png)
+
+```r
 partialPlot(dengue_forest_all, 
                        dengue_test, 
                        'precipitation_amt', 
                        las=1)
+```
+
+![plot of chunk dengue_trees pdplots](figure/dengue_trees pdplots-2.png)
+
+```r
 partialPlot(dengue_forest_all, 
                          dengue_test, 
                          'season_num', 
                          las=1)
-
 ```
+
+![plot of chunk dengue_trees pdplots](figure/dengue_trees pdplots-3.png)
 We note several findings:
 
 Dengue cases appear to rise almost exponentially at a specific humidity greater than 18g H~2~O/kg of air. Interestingly, dengue cases seem to first decrease with precipitation then rise again with higher rainfall. In general, this is a reasonable result as mosquitoes require rainfall to breed. A possible explanation for the initial drop in cases at low to medium levels of precipitation may be explained by the fact that mosquitoes actually rely on *standing water* to reproduce. Ergo, low/moderate rainfall may only serve to disturb existing mosquito breeding sites via overflowing, whereas high rainfall has the potential to create new breeding sites through flooding to offset the aforementioned disruption. Of course, testing this hypothesis would require further studies that take into account geographical and hydrological factors. Finally, the `season` variable informs us that dengue cases tend to increase with temperature, peaking in the summer/fall months. Indeed, there is a marked increase in dengue cases at around 70 degrees F, (which corresponds to 297 degrees K, as Kelvins are the unit of temperature used in the data set). Multiple online sources I accessed confirm that temperatures between 70 and 80 F are most favorable to mosquito activity.
@@ -127,42 +79,82 @@ For this model, I decided to collapse LEED and EnergyStar into a single "green c
 
 The first step involved removing any "superfluous" variables. LEED and EnergyStar were immediately omitted since as aforementioned, I had decided to join the two into a single category. Rent and leasing_rate were also removed to avoid collinearity as our outcome variable i.e. revenue/sqft/year is a linear combination of these two.
 
-```{r green_certification performance}
+
+```r
 green_rmsetable
 ```
+
+<table>
+<caption>Out-of-Sample Model Performance</caption>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> Model </th>
+   <th style="text-align:left;"> RMSE </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Lasso </td>
+   <td style="text-align:left;"> 1593.0852388943 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Boosted </td>
+   <td style="text-align:left;"> 879.022833472687 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Random Forest </td>
+   <td style="text-align:left;"> 672.525059500673 </td>
+  </tr>
+</tbody>
+</table>
 I then compared performance across three models: lasso, boosted tree, and random forest. As evidenced by the table above, the random forest model yielded the lowest RMSE and was thus selected.
 
 **Analysis:**
 
 First, we analyze the variable importance plot derived from the aforementioned random forest model:
 
-```{r varimpforest}
+
+```r
 varimpforest <- varImpPlot(green_forest, main="Variable Importance Plot")
 ```
 
+![plot of chunk varimpforest](figure/varimpforest-1.png)
+
 Some of the strongest effects on our outcome variable were engendered by the variables: `size`, `age`, and `City_Market_Rent`, for which I provide partial dependence plots below.
 
-```{r green_certification pd}
+
+```r
 partialPlot(green_forest, green_test, 'size', las=1)
 ```
+
+![plot of chunk green_certification pd](figure/green_certification pd-1.png)
 Our outcome variable i.e. rent/sqft (per calendar year) naturally depends on the size (total square footage of the building). From the `size` partial dependence plot we see that the rent/sqft rises with greater total floor area an plateaus around 2 million sqft. We note that `size` has the second highest %IncMSE and node purity, indicating its high explanatory power.
 
-```{r, green_certification pd 2}
+
+```r
 partialPlot(green_forest, green_test, 'age', las=1)
 ```
+
+![plot of chunk green_certification pd 2](figure/green_certification pd 2-1.png)
 The `age` partial dependence plot displays an interesting relationship wherein the rent/sqft rapidly rises then gradually falls to a "trough" before spiking again (albeit to a lesser extent) at a building ages greater than 100 years. The initial increase represents the natural depreciation of a building's value and thus rent over time until it reaches its salvage value (to use accounting terminology). The secondary spike is most likely caused by the premium that many buyers will place on old buildings given their history or perhaps unique architectural style. This demand will thus lead to a higher rent for such buildings. Like, `size`, `age` ranks highly on %IncMSE (in fact, it tops this category) and node purity, indicating its explanatory power
 
 
-```{r, green_certification pd 3}
+
+```r
 partialPlot(green_forest, green_test, 'City_Market_Rent', las=1)
 ```
+
+![plot of chunk green_certification pd 3](figure/green_certification pd 3-1.png)
 I also thought it would be worthwhile to examine a partial dependence plot of `City_Market_Rent` as this variable held the highest node purity. This is unsurprising as the variable is defined as "a measure of average rent per square-foot per calendar year in the building's local market". Thus, `City_Market_Rent` essentially pools our oucome variable, rent/sqft/year in the area around the building. The market value of a building tends to be dictated to a large extent by the overall real estate prices in its area. Hence, buildings in close proximity to one another will likely have similar rent and leasing rates. This phenomenon is reflected in the partial dependence plot above where we observe a positive relationship between local average rent and a given building's rent.
 
 Finally, we turn our attention to to `green_rating` as at the outset of this question I decided that I would utilize this variable as opposed to LEED or EnergyStar as an indicator of green certification. Thus, the partial dependence plot of `green_rating` is included below:
 
-```{r green_certification pd 4}
+
+```r
 partialPlot(green_forest, green_test, 'green_rating', las=1)
 ```
+
+![plot of chunk green_certification pd 4](figure/green_certification pd 4-1.png)
 As `green_rating` is a binary indicator variable, we can deduce from the plot that that, on average, there is a roughly $70 difference between having a green certification or not. This implies that having a green certification is not a very significant factor in the rent/sqft/year associated with a building. This point is corroborated by `green_rating`'s low %IncMSE and low node purity.
 
 
