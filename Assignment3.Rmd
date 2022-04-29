@@ -2,7 +2,7 @@
 title: "Assignment 3"
 author: "Jacob Bulzak"
 date: "4/8/2022"
-output: md_document
+output: pdf_document
 ---
 
 
